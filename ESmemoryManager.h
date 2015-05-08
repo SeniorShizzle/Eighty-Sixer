@@ -26,11 +26,15 @@ bool instructionLoadComplete();
 bool programWriteIsLocked();
 void printStackPointers();
 void printProgramCode();
+void printHarmonFormattedTrace();
 
 uint8_t readNextInstructionByte();
 
-uint8_t jumpToReadAtInternalAddress(int);
-uint8_t jumpToReadAtExternalAddress(uint8_t*);
+bool jumpToReadAtInternalAddress(int);
+bool jumpToReadAtExternalAddress(uint8_t*);
+
+bool pushToStack(int);
+int  popFromStack();
 
 int* relativeToPhysicalAddress(int);
 int  physicalToRelativeAddress(int*);
@@ -42,7 +46,7 @@ bool hasNextInstruction();
 
 bool offsetProgramCounter(int);
 
-char *int2bin(unsigned, char*);
+int* myFirstMalloc(size_t);
 
 #endif /* defined(__Eighty_Sixer__ESmemoryManager__) */
 

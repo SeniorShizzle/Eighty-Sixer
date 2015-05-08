@@ -136,8 +136,8 @@ void printStackPointers(){
     printf("Frame Pointer:              %p\n", framePointer);
     printf("Heap Pointer:               %p\n", heapPointer);
     printf("Sandbox Size/Specified:     %ld/%d\n", sandboxCeiling - sandboxFloor, requestedSize);
-    printf("Stack Size:                 %ld\n",  sandboxCeiling - stackPointer);
-    printf("Current Stack Frame Size:   %ld\n",  framePointer - stackPointer);
+    printf("Stack Size:                 %ld\n",  stackPointer - sandboxCeiling);
+    printf("Current Stack Frame Size:   %ld\n",  stackPointer - framePointer);
     printf("Heap Size:                  %ld\n",  heapPointer - nextInstructionByte);
     printf("Program Code Size:          %ld\n",  nextInstructionByte - sandboxFloor);
     printf("Instruction Bytes Read:     %d\n", instructionBytes);
@@ -241,14 +241,14 @@ uint8_t readNextInstructionByte(){
 
 
 /**
- *  Jumps to the internal memory address and returns the byte located there. Automatically increments the current instruction.
+ *  Jumps to the internal memory address and returns the byte located there. DOES NOT INCREMENT the current instruction.
  *  Fails by halting execution if the jump address is not a valid program instruction address.
  *
  *  @param address the internal memory address target of the jump instruction, treating the bottom of the sandbox as 0x00000000
  *
  *  @return the byte located at that address
  */
-uint8_t jumpToReadAtInternalAddress(int address){
+bool jumpToReadAtInternalAddress(int address){
     if (!isLocked || !initialized) {
         printf("\nFATAL ERROR: Concurrent Modification / Read Exception\n");
         quit(ADDRESS_FAULT);
@@ -262,19 +262,19 @@ uint8_t jumpToReadAtInternalAddress(int address){
         quit(ADDRESS_FAULT);
     }
 
-    return *(currentInstructionByte++);                     // post-increment will return the proper byte and then increment for future calls
+    return true;
 }
 
 
 /**
- *  Jumps to the physical memory address and returns the byte located there. Automatically increments the current instruction.
+ *  Jumps to the physical memory address and returns the byte located there. DOES NOT INCREMENT the current instruction.
  *  Fails by halting execution if the jump address is not a valid program instruction address.
  *
  *  @param address the physical memory address target of the jump instruction
  *
  *  @return the byte located at that address
  */
-uint8_t jumpToReadAtExternalAddress(uint8_t *address){
+bool jumpToReadAtExternalAddress(uint8_t *address){
     if (!isLocked || !initialized) {
         printf("\nFATAL ERROR: Concurrent Modification / Read Exception\n");
         quit(ADDRESS_FAULT);
@@ -288,7 +288,7 @@ uint8_t jumpToReadAtExternalAddress(uint8_t *address){
         quit(ADDRESS_FAULT);
     }
 
-    return *(currentInstructionByte++);                     // post-increment will return the proper byte and then increment for future calls
+    return true;                     // post-increment will return the proper byte and then increment for future calls
 }
 
 /**
@@ -321,7 +321,14 @@ bool hasNextInstruction(){
     return true;
 }
 
-
+/**
+ *  Sets the memory at the given physical address
+ *
+ *  @param address the physical address to set
+ *  @param payload the four bytes of data to set
+ *
+ *  @return TRUE if the operation was successful
+ */
 bool setMemoryAtPhysicalAddress(int* address, int payload){
     if (address > (int *)heapPointer || address < (int *)lastInstructionByte) return false;               // make sure we're trying to write memory to the heap
 
@@ -332,12 +339,47 @@ bool setMemoryAtPhysicalAddress(int* address, int payload){
     return false;
 }
 
+/**
+ *  Fetches the four byte block at the given physical address. Used for safety; halts operation if unsuccessful.
+ *
+ *  @param address a pointer to the desired item
+ *
+ *  @return the four byte block encoded as a signed integer
+ */
 int fetchMemoryAtPhysicalAddress(int* address){
-    if (address > (int *)heapPointer || address < (int *)lastInstructionByte) return -1;               // make sure we're trying to read memory from the heap
+    if (address > (int *)heapPointer || address < (int *)lastInstructionByte) quit(ADDRESS_FAULT);               // make sure we're trying to read memory from the heap
 
     return *address;
 }
 
+/**
+ *  Pushes the given integer payload onto the stack and adjusts the stack pointer.
+ *
+ *  @param payload the four byte block to push onto the stack
+ *
+ *  @return TRUE if the operation was successful
+ */
+bool pushToStack(int payload){
+    if (stackPointer <= heapPointer) quit(ADDRESS_FAULT);
+
+    *stackPointer = payload;
+    stackPointer += 4;
+
+    return true;
+}
+
+/**
+ *  Returns the top item from the stack and decrements the stack pointer.
+ *
+ *  @return the top item from the stack
+ */
+int popFromStack(){
+    if (stackPointer >= sandboxCeiling) quit(ADDRESS_FAULT);
+
+    int popped = *stackPointer;
+    stackPointer -= 4;
+    return popped;             // post decrement returns proper value and then decreases the stack
+}
 
 
 

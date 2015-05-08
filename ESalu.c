@@ -95,7 +95,7 @@ void rmmovl(){
         value |= ((int)readNextInstructionByte() << i);
     }
 
-    if (verbose) printf("Offset %#x\n", value);
+    if (verbose) printf("Offset %#X\n", value);
 
     *regB += value;      // apply the offset to register B
     regB = relativeToPhysicalAddress(*regB);
@@ -188,23 +188,97 @@ void arithmetic(uint8_t instruction){
 }
 
 void jump(uint8_t instruction){
+
+    int value = 0;
+    for (int i = 0; i < 32; i += 8) {
+        value |= ((int)readNextInstructionByte() << i);
+    }
+
     if (verbose) {
-        printf("Jump Operation: ");
+        printf("Jump Operation: %#X\n", value);
+    }
+
+    uint8_t functionCode = instruction & 0xF;
+    switch (functionCode) {
+        case 0:     // always
+                                                        jumpToReadAtInternalAddress(value);
+            break;
+        case 1:     // less than equal
+            if ((signFlag ^ overflowFlag) | zeroFlag)   jumpToReadAtInternalAddress(value);
+            break;
+        case 2:     // less than
+            if (signFlag ^ overflowFlag)                jumpToReadAtInternalAddress(value);
+            break;
+        case 3:     // equal
+            if (zeroFlag)                               jumpToReadAtInternalAddress(value);
+            break;
+        case 4:     // not equal
+            if (!zeroFlag)                              jumpToReadAtInternalAddress(value);
+            break;
+        case 5:     // greater than equal
+            if ( ~(signFlag ^ overflowFlag))            jumpToReadAtInternalAddress(value);
+            break;
+        case 6:     // greater than
+            if (~(signFlag ^ overflowFlag) & ~zeroFlag) jumpToReadAtInternalAddress(value);
+            break;
+
+        default:
+            quit(INSTRUCTION_FAULT);
+            break;
     }
 
 }
 
 void cmov(uint8_t instruction){
     if (verbose) {
-        printf("Conditional Move: ");
+        printf("Conditional Move:\n");
+    }
+
+    uint8_t registers = readNextInstructionByte();
+
+    int *regA = registerAtIndex((registers & 0xF0) >> 4);
+    int *regB = registerAtIndex(registers & 0xF);
+
+    uint8_t functionCode = instruction & 0xF;
+    switch (functionCode) {
+        case 1:     // less than equal
+            if ((signFlag ^ overflowFlag) | zeroFlag)   *regB = *regA;
+            break;
+        case 2:     // less than
+            if (signFlag ^ overflowFlag)                *regB = *regA;
+            break;
+        case 3:     // equal
+            if (zeroFlag)                               *regB = *regA;
+            break;
+        case 4:     // not equal
+            if (!zeroFlag)                              *regB = *regA;
+            break;
+        case 5:     // greater than equal
+            if ( ~(signFlag ^ overflowFlag))            *regB = *regA;
+            break;
+        case 6:     // greater than
+            if (~(signFlag ^ overflowFlag) & ~zeroFlag) *regB = *regA;
+            break;
+
+        default:
+            quit(INSTRUCTION_FAULT);
+            break;
     }
 
 }
 
 void call(){
-    if (verbose) {
-        printf("Call: ");
+    int value = 0;
+    for (int i = 0; i < 32; i += 8) {
+        value |= ((int)readNextInstructionByte() << i);
     }
+
+    if (verbose) {
+        printf("Call: %#X", value);
+    }
+
+    pushToStack(physicalToRelativeAddress((int *)currentInstructionByte));
+    jumpToReadAtInternalAddress(value);
 
 }
 
@@ -212,13 +286,21 @@ void ret(){
     if (verbose) {
         printf("RETURN\n");
     }
+
+    jumpToReadAtInternalAddress(popFromStack());
     
 }
 
 void pushl(){
+    uint8_t registers = readNextInstructionByte();
+    int *regA = registerAtIndex((registers & 0xF0) >> 4);
+    if ((registers & 0xF) != 0xF) quit(INSTRUCTION_FAULT);        // make sure the second register is the null register 0xF
+
     if (verbose) {
-        printf("Push Long\n");
+        printf("Push Long: %d\n", *regA);
     }
+
+    pushToStack(*regA);
     
 }
 
@@ -226,7 +308,12 @@ void popl(){
     if (verbose) {
         printf("Pop Long\n");
     }
-    
+
+    uint8_t registers = readNextInstructionByte();
+    int *regA = registerAtIndex((registers & 0xF0) >> 4);
+    if ((registers & 0xF) != 0xF) quit(INSTRUCTION_FAULT);        // make sure the second register is the null register 0xF
+
+    *regA = popFromStack();
 }
 
 
@@ -237,7 +324,7 @@ void popl(){
  */
 bool startCycle(){
     uint8_t instruction = readNextInstructionByte();
-    if (verbose) printf("Running Instruction Code: %#02X\n", instruction);
+    if (verbose) printf("Running Instruction Code: %#02X at address %#04X\n", instruction, physicalToRelativeAddress((int *)currentInstructionByte));
 
     switch ((instruction & 0xF0) >> 4) {                   // mask to the leftmost nibble (icode)
         case 0:
@@ -285,6 +372,8 @@ bool startCycle(){
             quit(INSTRUCTION_FAULT);            // if the icode is not one of the listed ones, we're screwed
             break;
     }
+
+    printf("\n");
 
     return true;
 }
