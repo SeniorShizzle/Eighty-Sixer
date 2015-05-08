@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#define ADDRESS_SPACE_SIZE_IN_BYTES 2048
+#define ADDRESS_SPACE_SIZE_IN_BYTES 2097152             // 2 MB is 2097152 bytes
 
 void alpha();
 void omega(FaultCode);
@@ -194,6 +194,8 @@ uint8_t parseInput(char byte){
  */
 void omega(FaultCode faultCode){
     // the beginning and the end
+
+    if (verbose) printStackPointers();
 
     switch (faultCode) {
         case HALT:

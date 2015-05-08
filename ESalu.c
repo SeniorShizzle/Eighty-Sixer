@@ -28,6 +28,10 @@ int  registerD = 0;
 int  sourceIndexPointer = 0;
 int  destinationIndexPointer = 0;
 
+bool zeroFlag       = false;
+bool signFlag       = false;
+bool overflowFlag   = false;
+
 
 /** ALU OPERATIONS **/
 
@@ -104,6 +108,22 @@ void mrmovl(){
         printf("Memory-Register Move Long\n");
     }
 
+    uint8_t registers = readNextInstructionByte();
+
+    int *regA = registerAtIndex((registers & 0xF0) >> 4);
+    int *regB = registerAtIndex(registers & 0xF);
+
+    int value = 0;
+    for (int i = 0; i < 24; i += 8) {
+        value |= ((int)readNextInstructionByte() << i);
+    }
+
+    if (verbose) printf("Offset %#x\n", value);
+
+    regB += value;      // apply the offset to register B
+    regB = translateToPhysicalAddress(*regB);
+
+    *regA = fetchMemoryAtPhysicalAddress(regB);
 }
 
 void arithmetic(uint8_t instruction){
@@ -111,6 +131,46 @@ void arithmetic(uint8_t instruction){
         printf("Arithmetic Operation: ");
     }
 
+    uint8_t registers = readNextInstructionByte();
+
+    int *regA = registerAtIndex((registers & 0xF0) >> 4);
+    int *regB = registerAtIndex(registers & 0xF);
+
+    uint8_t functionCode = instruction & 0xF;
+    int result;
+
+    switch (functionCode) {
+        case 0:
+            if (verbose) printf("add\n");
+            result = *regB + *regA;
+            break;
+        case 1:
+            if (verbose) printf("subtract\n");
+            result = *regB - *regA;
+            break;
+        case 2:
+            if (verbose) printf("and\n");
+            result = *regB & *regA;
+            overflowFlag = false;               // overflow flag always unset for bitwise operations
+            break;
+        case 3:
+            if (verbose) printf("xor\n");
+            result = *regB ^ *regA;
+            overflowFlag = false;               // overflow flag always unset for bitwise operations
+            break;
+
+        default:
+            quit(INSTRUCTION_FAULT);
+            break;
+    }
+
+    if (result == 0) zeroFlag = true;           // zero flag is set when the resultant operation is a zero
+    else zeroFlag = false;
+
+    signFlag = (result >> 31);                  // sign flag is set to the leftmost bit. No need to mask, since 0 will pad 0 and 1 is true anyway
+
+
+    *regB = result;                             // store the result in register B
 }
 
 void jump(uint8_t instruction){
