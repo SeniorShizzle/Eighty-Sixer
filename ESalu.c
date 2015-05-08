@@ -142,10 +142,24 @@ void arithmetic(uint8_t instruction){
     switch (functionCode) {
         case 0:
             if (verbose) printf("add\n");
+
+            if (*regA > 0 && *regB > INT_MAX - *regA) {             // check for overflow
+                overflowFlag = true;
+            } else if (*regA < 0 && *regB < INT_MIN - *regA) {
+                overflowFlag = true;
+            } else overflowFlag = false;
+
             result = *regB + *regA;
             break;
         case 1:
             if (verbose) printf("subtract\n");
+
+            if (*regA > 0 && *regB > INT_MAX - *regA) {             // check for overflow
+                overflowFlag = true;
+            } else if (*regA < 0 && *regB < INT_MIN - *regA) {
+                overflowFlag = true;
+            } else overflowFlag = false;
+
             result = *regB - *regA;
             break;
         case 2:

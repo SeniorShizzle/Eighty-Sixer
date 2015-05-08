@@ -10,6 +10,7 @@
 #define __Eighty_Sixer__ESalu__
 
 #include <stdio.h>
+#include <limits.h>
 #include <stdbool.h>
 #include "main.h"
 #include "ESmemoryManager.h"
