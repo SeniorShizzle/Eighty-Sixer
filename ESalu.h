@@ -14,7 +14,6 @@
 #include "main.h"
 #include "ESmemoryManager.h"
 
-bool setupALU();
 bool startCycle();
 
 extern bool zeroFlag;

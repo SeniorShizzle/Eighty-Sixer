@@ -32,8 +32,8 @@ uint8_t readNextInstructionByte();
 uint8_t jumpToReadAtInternalAddress(int);
 uint8_t jumpToReadAtExternalAddress(uint8_t*);
 
-int  translateToRelativeAddress(int*);
-int* translateToPhysicalAddress(int);
+int* relativeToPhysicalAddress(int);
+int  physicalToRelativeAddress(int*);
 
 bool setMemoryAtPhysicalAddress(int*, int);
 int  fetchMemoryAtPhysicalAddress(int*);

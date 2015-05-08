@@ -182,6 +182,9 @@ bool programWriteIsLocked(){
 }
 
 
+
+
+
 /**
  *  Translates the given pointer into the internal address system.
  *
@@ -189,15 +192,15 @@ bool programWriteIsLocked(){
  *
  *  @return the adjusted address, treating the base of the memory space as 0x000000000
  */
-int translateToInternalAddress(int *address){
+
+int physicalToRelativeAddress(int* address){
     if (address > (int *)sandboxCeiling || address < (int *)sandboxFloor) {       // the pointer is not within the virtual memory space
         return -1;
     }
 
 
-    return (int)(address - (int *)sandboxFloor);                           // subtraction does the trick
+    return (int)(address - (int *)sandboxFloor);                                   // subtraction does the trick
 }
-
 
 /**
  *  Translates the given internal address into the external address system.
@@ -206,7 +209,7 @@ int translateToInternalAddress(int *address){
  *
  *  @return a pointer to the physical memory address referenced by the internal address
  */
-int* translateToExternalAddress(int address){
+int* relativeToPhysicalAddress(int address){
     if (address > requestedSize || address < 0) {       // the pointer is not within the virtual memory space
         return NULL;
     }
@@ -251,7 +254,7 @@ uint8_t jumpToReadAtInternalAddress(int address){
         quit(ADDRESS_FAULT);
     }
 
-    currentInstructionByte = (uint8_t *)translateToExternalAddress(address);
+    currentInstructionByte = (uint8_t *)relativeToPhysicalAddress(address);
 
 
     if (currentInstructionByte >= stackPointer || currentInstructionByte > lastInstructionByte) {

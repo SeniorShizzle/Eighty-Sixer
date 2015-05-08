@@ -97,8 +97,8 @@ void rmmovl(){
 
     if (verbose) printf("Offset %#x\n", value);
 
-    regB += value;      // apply the offset to register B
-    regB = translateToPhysicalAddress(*regB);
+    *regB += value;      // apply the offset to register B
+    regB = relativeToPhysicalAddress(*regB);
 
     if (!setMemoryAtPhysicalAddress(regB, *regA)) quit(ADDRESS_FAULT);          // sets the memory
 }
@@ -120,8 +120,8 @@ void mrmovl(){
 
     if (verbose) printf("Offset %#x\n", value);
 
-    regB += value;      // apply the offset to register B
-    regB = translateToPhysicalAddress(*regB);
+    *regB += value;      // apply the offset to register B
+    regB = relativeToPhysicalAddress(*regB);
 
     *regA = fetchMemoryAtPhysicalAddress(regB);
 }

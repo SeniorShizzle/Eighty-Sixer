@@ -9,7 +9,7 @@
 
 #include "main.h"
 
-#define ADDRESS_SPACE_SIZE_IN_BYTES 2048             // 2 MB is 2097152 bytes
+#define ADDRESS_SPACE_SIZE_IN_BYTES 2097152             // 2 MB is 2097152 bytes
 
 void alpha();
 void omega(FaultCode);
