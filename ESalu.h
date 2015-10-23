@@ -13,6 +13,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include "main.h"
+#include <stdint.h>
 #include "ESmemoryManager.h"
 
 bool startCycle();
@@ -20,6 +21,10 @@ bool startCycle();
 extern bool zeroFlag;
 extern bool signFlag;
 extern bool overflowFlag;
+
+extern int stepCount;
+
+void printHarmonFormattedTrace(char*);
 
 int *registerAtIndex(int);
 

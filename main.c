@@ -1,3 +1,4 @@
+
 //
 //  main.c
 //  Eighty-Sixer™, The Little Y86 Virtual Machine
@@ -9,7 +10,7 @@
 
 #include "main.h"
 
-#define ADDRESS_SPACE_SIZE_IN_BYTES 204800             // 2 MB is 2097152 bytes
+#define ADDRESS_SPACE_SIZE_IN_BYTES 524228             // 2 MB is 2097152 bytes, 2^19 is 524228
 
 void alpha();
 void omega(FaultCode);
@@ -199,15 +200,20 @@ void omega(FaultCode faultCode){
 
     switch (faultCode) {
         case HALT:
+            printHarmonFormattedTrace("HLT");
             break;
         case AOK:
+            printHarmonFormattedTrace("AOK");
             break;
         case ADDRESS_FAULT:
+            printHarmonFormattedTrace("ADR");
             break;
         case INSTRUCTION_FAULT:
+            printHarmonFormattedTrace("INS");
             break;
 
         default:
+            printHarmonFormattedTrace("WTF");
             break;
     }
 

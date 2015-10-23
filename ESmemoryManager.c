@@ -152,6 +152,7 @@ void printStackPointers(){
 }
 
 
+
 /**
  *  Prints the entirety of the stored program code. Will only execute is the program code write
  *  operation is locked. See programWriteIsLocked() for more information.
@@ -363,7 +364,8 @@ bool pushToStack(int payload){
     if (stackPointer <= heapPointer) quit(ADDRESS_FAULT);
 
     *stackPointer = payload;
-    stackPointer += 4;
+    stackPointer -= 4;          // the stack grows downwards
+
 
     return true;
 }
@@ -377,8 +379,53 @@ int popFromStack(){
     if (stackPointer >= sandboxCeiling) quit(ADDRESS_FAULT);
 
     int popped = *stackPointer;
-    stackPointer -= 4;
+    stackPointer += 4;         // the stack grows downard, so to pop we add
     return popped;             // post decrement returns proper value and then decreases the stack
+}
+
+/**
+ *  The malloc() function allocates size bytes and returns a pointer to the allocated memory.
+ *
+ *  @param size the size in bytes of the block
+ *
+ *  @return a pointer to the top of the memory
+ */
+int* myFirstMalloc(size_t size){
+    if (heapPointer + size + 1 >= stackPointer) {
+        return NULL;
+    }
+
+    int* blockPtr = (int*)heapPointer;        // start at the heap pointer
+    heapPointer += size + 1;            // increment the heap. woohoo! make room for the sentinal data
+    *blockPtr = (int)size;                   // store the size of the array as a sentinal so we can free it later
+    blockPtr++;                         // create a sentinal bit below the block for page data
+    return blockPtr;                    // the customer gets a nice pointer to their fresh memory!
+}
+
+/**
+ *  A naive implementation of free(). The free() function releases memory from the heap.
+ *  Do not call this on a memory address not created using myFirstMalloc() as doing so will cause catistrophic failure.
+ *
+ *  @param mallocdMemory the address of a block allocated using myFirstMalloc()
+ *
+ *  @return FALSE if the operation failed
+ */
+bool myFirstFree(int *mallocdMemory){
+    if (*(mallocdMemory - 1) > requestedSize) {                     // they want more than we can give. typical women.
+        return false;
+    }                                                               // sorry, that was sexist.
+
+    if (mallocdMemory + *(mallocdMemory - 1) == (int *)heapPointer) {      // we're at the top of the heap
+        heapPointer -= *(mallocdMemory - 1) + 1;                    // use the stored sentinal data to decrement the heap pointer
+        return true;
+    }
+
+    // Yes, we're only doing anything if the malloc'd memory is at the top of the heap. To register complaints, please write to:
+
+    // Top Gear, BBC2
+    // Office of the Prime Minister
+    // Sussex, England
+    return false;
 }
 
 

@@ -24,6 +24,7 @@ int  registerB = 0;
 int  registerC = 0;
 int  registerD = 0;
 
+int stepCount = 0;
 
 int  sourceIndexPointer = 0;
 int  destinationIndexPointer = 0;
@@ -324,9 +325,11 @@ void popl(){
  */
 bool startCycle(){
     uint8_t instruction = readNextInstructionByte();
-    if (verbose) printf("Running Instruction Code: %#02X at address %#04X\n", instruction, physicalToRelativeAddress((int *)currentInstructionByte));
+    if (verbose) printf("Running Instruction Code: %#02X at address 0x%04X\n", instruction, physicalToRelativeAddress((int *)currentInstructionByte));
 
-    switch ((instruction & 0xF0) >> 4) {                   // mask to the leftmost nibble (icode)
+    stepCount++;                                           // (gate * stepcount) / time = speed
+
+    switch ((instruction & 0xF0) >> 4) {                   // mask to the leftmost nibble (icode) (tasty)
         case 0:
             halt();
             break;
@@ -403,6 +406,45 @@ int *registerAtIndex(int index){
             return NULL;
             break;
     }
+}
+
+
+void printHarmonFormattedTrace(char *status){
+
+    /* FORMATS PER:
+
+     Steps: 43
+     PC: 0x00000108
+     Status: HLT
+     CZ: 0
+     CS: 0
+     CO: 0
+     %eax: 0x0000001C
+     %ecx: 0x00000000
+     %edx: 0x00000000
+     %ebx: 0xFFFFFFFD
+     %esp: 0xFFFFFFDC
+     %ebp: 0x00000100
+     %esi: 0x00000000
+     %edi: 0x0000A001
+
+     */
+    printf("\n\n");
+    printf("Steps: %d\n", stepCount);
+    printf("PC: 0x%08X\n", physicalToRelativeAddress((int *)currentInstructionByte));
+    printf("Status: %s\n", status);
+    printf("CZ: %1d\n", zeroFlag);
+    printf("CS: %1d\n", signFlag);
+    printf("CO: %1d\n", overflowFlag);
+    printf("%%eax: 0x%08X\n", registerA);
+    printf("%%ecx: 0x%08X\n", registerC);
+    printf("%%edx: 0x%08X\n", registerD);
+    printf("%%ebx: 0x%08X\n", registerB);
+    printf("%%esp: 0x%08X\n", (int)stackPointer);
+    printf("%%ebp: 0x%08X\n", (int)framePointer);
+    printf("%%esi: 0x%08X\n", sourceIndexPointer);
+    printf("%%edi: 0x%08X\n", destinationIndexPointer);
+
 }
 
 
